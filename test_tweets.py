@@ -1,5 +1,8 @@
+from cassandra import ConsistencyLevel
 from cassandra.cluster import Cluster
+from cassandra.query import SimpleStatement
 from random import choice, choices, randint
+from sys import argv
 from time import time
 
 cluster = Cluster(['localhost'])
@@ -12,58 +15,61 @@ MONTHS = list(range(1, 12))
 DAYS = list(range(1, 31))
 UUIDS = [row.uuid for row in list(session.execute('SELECT uuid FROM tweets3_by_uuid LIMIT 10'))]
 
-select_1 = [
+selects_1 = [
     'SELECT * FROM tweets1 WHERE user=%(user)s',
     'SELECT * FROM tweets2 WHERE user=%(user)s',
     'SELECT * FROM tweets3 WHERE user=%(user)s'
 ]
 
-select_2 = [
+selects_2 = [
     'SELECT * FROM tweets1 WHERE user=%(user)s AND year=%(year)s',
     'SELECT * FROM tweets2 WHERE user=%(user)s AND year=%(year)s ALLOW FILTERING',
     'SELECT * FROM tweets3 WHERE user=%(user)s AND year=%(year)s ALLOW FILTERING'
 ]
 
-select_3 = [
+selects_3 = [
     'SELECT * FROM tweets1 WHERE user=%(user)s AND month=%(month)s ALLOW FILTERING',
     'SELECT * FROM tweets2 WHERE user=%(user)s AND month=%(month)s',
     'SELECT * FROM tweets3 WHERE user=%(user)s AND month=%(month)s'
 ]
 
-select_4 = [
+selects_4 = [
     'SELECT * FROM tweets1 WHERE user=%(user)s AND year=%(year)s AND month=%(month)s AND day=%(day)s ALLOW FILTERING',
     'SELECT * FROM tweets2 WHERE user=%(user)s AND month=%(month)s AND year=%(year)s AND day=%(day)s ALLOW FILTERING',
     'SELECT * FROM tweets3 WHERE user=%(user)s AND month=%(month)s AND year=%(year)s AND day=%(day)s ALLOW FILTERING'
 ]
 
-select_5 = [
+selects_5 = [
     'SELECT * FROM tweets1 WHERE user=%(user)s AND uuid=%(uuid)s ALLOW FILTERING',
     'SELECT * FROM tweets2 WHERE user=%(user)s AND uuid=%(uuid)s ALLOW FILTERING',
     'SELECT * FROM tweets3 WHERE user=%(user)s AND uuid=%(uuid)s ALLOW FILTERING'
 ]
 
-select_6 = [
+selects_6 = [
     'SELECT * FROM tweets1 WHERE uuid=%(uuid)s ALLOW FILTERING',
     'SELECT * FROM tweets2 WHERE uuid=%(uuid)s ALLOW FILTERING',
     'SELECT * FROM tweets3_by_uuid WHERE uuid=%(uuid)s'
 ]
 
-select_7 = [
+selects_7 = [
     'SELECT * FROM tweets1 WHERE tags CONTAINS %(tag)s ALLOW FILTERING',
     'SELECT * FROM tweets2 WHERE tags CONTAINS %(tag)s',
     'SELECT * FROM tweets3 WHERE tags CONTAINS %(tag)s'
 ]
 
-select_8 = [
+selects_8 = [
     'SELECT * FROM tweets1 WHERE year=%(year)s AND month=%(month)s AND day=%(day)s AND tags CONTAINS %(tag)s ALLOW FILTERING',
     'SELECT * FROM tweets2 WHERE month=%(month)s AND year=%(year)s AND day=%(day)s AND tags CONTAINS %(tag)s ALLOW FILTERING',
     'SELECT * FROM tweets3 WHERE month=%(month)s AND year=%(year)s AND day=%(day)s AND tags CONTAINS %(tag)s ALLOW FILTERING'
 ]
 
 selects = [
-    select_1, select_2, select_3, select_4, 
-    select_5, select_6, select_7, select_8
+    selects_1, selects_2, selects_3, selects_4, 
+    selects_5, selects_6, selects_7, selects_8
 ]
+
+if len(argv) == 2 and argv[1] == 'QUORUM':
+    selects = [[SimpleStatement(s, consistency_level=ConsistencyLevel.QUORUM) for s in selects_sublist] for selects_sublist in selects]
 
 seconds = [[0.0] * 8 for i in range(3)]
 
